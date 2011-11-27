@@ -1,0 +1,30 @@
+application: fictex
+version: 0-0-1
+runtime: go
+api_version: 3
+
+handlers:
+- url: /favicon.ico
+  static_files: favicon.ico
+  upload: favicon.ico
+  expiration: "7d"
+
+- url: /
+  script: _go_app
+  login: optional
+
+- url: /read
+  script: _go_app
+  login: optional
+
+- url: /task/.*
+  script: _go_app
+  login: admin
+
+- url: /.*
+  script: _go_app
+  login: required
+
+builtins:
+- datastore_admin: on
+- deferred: on
