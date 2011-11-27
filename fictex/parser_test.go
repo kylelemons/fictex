@@ -95,6 +95,60 @@ var parseTests = []struct {
 			}},
 		},
 	},
+	{
+		Desc:  "Dashes",
+		Input: "a-b--c---d----e-----f",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("a-b"),
+				}, {
+					Type: NDash,
+				}, {
+					Type: Text,
+					Text: []byte("c"),
+				}, {
+					Type: MDash,
+				}, {
+					Type: Text,
+					Text: []byte("d"),
+				}, {
+					Type: HLine,
+				}, {
+					Type: Text,
+					Text: []byte("e"),
+				}, {
+					Type: HLine,
+				}, {
+					Type: Text,
+					Text: []byte("f"),
+				}, },
+			}},
+		},
+	},
+	{
+		Desc:  "Paragraph",
+		Input: "a\nb\n\nc\nd",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("a b"),
+				}},
+			}, {
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("c d"),
+				}},
+			}},
+		},
+	},
 }
 
 func TestParse(t *testing.T) {

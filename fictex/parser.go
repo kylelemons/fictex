@@ -118,7 +118,32 @@ func (p *parser) next() (Node, os.Error) {
 }
 
 func (p *parser) readDash() (Node, os.Error) {
-	return Node{}, Unimplemented("readDash")
+	cnt := 1
+
+	var err os.Error
+	for {
+		var c byte
+		if c, err = p.ReadByte(); err != nil {
+			break
+		}
+
+		if c != '-' {
+			p.UnreadByte()
+			break
+		}
+
+		cnt++
+	}
+
+	switch cnt {
+		case 1:
+			return Node{Type: Text, Text: []byte{'-'}}, nil
+		case 2:
+			return Node{Type: NDash}, nil
+		case 3:
+			return Node{Type: MDash}, nil
+	}
+	return Node{Type: HLine}, nil
 }
 
 func (p *parser) readPreview() (Node, os.Error) {
@@ -209,7 +234,13 @@ more:
 		switch c {
 			case end:
 				next, err := p.Peek(1)
-				if err != nil || next[0] == ' ' {
+				if t == Text {
+					if next[0] == '\n' {
+						break more
+					}
+					n.Text = append(n.Text, ' ')
+					break
+				} else if err != nil || next[0] == ' ' {
 					n.Type = t
 					break more
 				}
@@ -220,6 +251,9 @@ more:
 					// TODO(kevlar): reuse Text if it has capacity
 					n.Text = append([]byte{end}, n.Text...)
 				}
+				break more
+			case '-':
+				p.UnreadByte()
 				break more
 			case '\n':
 				break more
