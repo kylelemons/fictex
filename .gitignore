@@ -1,2 +1,14 @@
 *.swp
 _go_app
+*.o
+*.a
+*.[568vq]
+[568vq].out
+*.so
+_obj
+_test
+_testmain.go
+*.exe
+_cgo*
+test.out
+build.out

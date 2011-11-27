@@ -1,0 +1,29 @@
+Formatting:
+
+  *text*                Makes text bold
+  /text/                Makes text oblique
+  _text_                Makes text underlined
+  [text] [text url]     Makes text into a link
+  -- and ---            Makes n-dash (–) or m-dash (—)
+  -----                 5 or more -s alone on a line makes a horizontal line
+  <<text>>              Starts an lj-cut with text as the preview text
+  >><<                  Ends an lj-cut
+                        Empty lines separate paragraphs
+
+Design:
+- Each "fic" is a datastore entry with:
+  - A ficid generated at random
+  - Any number of "ficlets"
+    - Each of these are actually a fic of themselves
+  - Any number of "headers"
+    - Standard headers are author, title, rating, fandom, warnings
+    - Implemented as a []string of the keys and a map[string]string of values
+  - Optional text
+  - A boolean indicating if the fic is Complete (true) or WIP (false)
+  - A boolean indicating if the fic is public (true) or private (false)
+
+- The front page (/) will contain a description of fictex and a simple format textbox
+- The read pages (/read/$ficid/$chapter) will render a fic
+  - The bare read page (/read) can also render from POST
+- The edit page (/edit/$ficid/$chapter) will handle creating or updating fics
+- The publish page (/pub/$ficid/$chapter) will handle publishing the fiction to livejournal, fanfiction.net, etc
