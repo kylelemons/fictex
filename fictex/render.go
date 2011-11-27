@@ -34,7 +34,7 @@ var TextRenderer = Renderer{
 	MDash: "---",
 	HLine: "\n-----\n",
 
-	Preview: StringPair{"<<%s\n", "\n>>\n"},
+	Preview: StringPair{"\n<<%s", ">>\n"},
 }
 
 var HTMLRenderer = Renderer{
@@ -47,7 +47,7 @@ var HTMLRenderer = Renderer{
 	MDash: "&mdash;",
 	HLine: "\n<hl>\n",
 
-	Preview: StringPair{"<!-- Preview: %q -->\n", "\n<!-- /Preview -->\n"},
+	Preview: StringPair{"<!-- Preview: %q -->\n", "<!-- /Preview -->\n"},
 }
 
 func (r Renderer) Render(w io.Writer, n Node) os.Error {

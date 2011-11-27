@@ -98,8 +98,13 @@ func (p *parser) next() (Node, os.Error) {
 			case '\n', '\t', ' ':
 				continue // slurp whitespace
 			case '<':
-				// The first < will have already been read
-				next, err = p.readPreview()
+				p.UnreadByte()
+				if c, e := p.Peek(2); e == nil && string(c) == "<<" {
+					p.Read(c)
+					next, err = p.readPreview()
+				} else {
+					next, err = p.readParagraph()
+				}
 			default:
 				p.UnreadByte()
 				next, err = p.readParagraph()
@@ -120,10 +125,9 @@ func (p *parser) next() (Node, os.Error) {
 func (p *parser) readDash() (Node, os.Error) {
 	cnt := 1
 
-	var err os.Error
 	for {
-		var c byte
-		if c, err = p.ReadByte(); err != nil {
+		c, err := p.ReadByte()
+		if err != nil {
 			break
 		}
 
@@ -147,7 +151,42 @@ func (p *parser) readDash() (Node, os.Error) {
 }
 
 func (p *parser) readPreview() (Node, os.Error) {
-	return Node{}, Unimplemented("readPreview")
+	n := Node{Type: Preview}
+
+preview:
+	line, err := p.ReadSlice('\n')
+
+	if line[len(line)-1] == '\n' {
+		line = line[:len(line)-1]
+	}
+	n.Text = append(n.Text, line...)
+
+	if err == bufio.ErrBufferFull {
+		goto preview
+	}
+	if err != nil {
+		return n, err
+	}
+
+	for {
+		chk, err := p.Peek(2)
+		if err != nil {
+			return n, err
+		}
+
+		if string(chk) == ">>" {
+			p.Read(chk)
+			break
+		}
+
+		node, err := p.readParagraph()
+		n.Child = append(n.Child, node)
+		if err != nil {
+			return n, err
+		}
+	}
+
+	return n, nil
 }
 
 func (p *parser) readParagraph() (Node, os.Error) {
@@ -183,6 +222,12 @@ more:
 					goto plain
 				}
 				next, err = p.readText(Underline, c)
+			case '>':
+				p.UnreadByte()
+				if c, e := p.Peek(2); e == nil && string(c) == ">>" {
+					break more
+				}
+				goto plain
 			default:
 				goto plain
 		}
@@ -235,8 +280,9 @@ more:
 			case end:
 				next, err := p.Peek(1)
 				if t == Text {
-					if next[0] == '\n' {
-						break more
+					switch next[0] {
+						case '\n', '>':
+							break more
 					}
 					n.Text = append(n.Text, ' ')
 					break

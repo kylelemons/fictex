@@ -77,12 +77,15 @@ var renderTests = []struct{
 			Type: Preview,
 			Text: []byte("short"),
 			Child: []Node{{
-				Type: Text,
-				Text: []byte("long"),
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("long"),
+				}},
 			}},
 		},
-		Text: "<<short\nlong\n>>\n",
-		HTML: "<!-- Preview: \"short\" -->\nlong\n<!-- /Preview -->\n",
+		Text: "\n<<short\n    long\n>>\n",
+		HTML: "<!-- Preview: \"short\" -->\n<p>\nlong\n</p>\n<!-- /Preview -->\n",
 	},
 }
 

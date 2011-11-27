@@ -149,6 +149,42 @@ var parseTests = []struct {
 			}},
 		},
 	},
+	{
+		Desc:  "Preview",
+		Input: "a\n\n<<short\nlong1\n\nlong2\n>>\nb",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("a"),
+				}},
+			}, {
+				Type: Preview,
+				Text: []byte("short"),
+				Child: []Node{{
+					Type: Paragraph,
+					Child: []Node{{
+						Type: Text,
+						Text: []byte("long1"),
+					}},
+				}, {
+					Type: Paragraph,
+					Child: []Node{{
+						Type: Text,
+						Text: []byte("long2"),
+					}},
+				}},
+			}, {
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("b"),
+				}},
+			}},
+		},
+	},
 }
 
 func TestParse(t *testing.T) {
