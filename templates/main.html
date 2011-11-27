@@ -1,0 +1,22 @@
+<html>
+<head>
+  <title>FicTeX - Fiction Formatting</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+</head>
+<body>
+  <form onsubmit='return false'>
+    <textarea id='text'></textarea>
+  </form>
+  <div id='preview'></div>
+</body>
+<script>
+  $(function() {
+    $('#text').keyup(function(){
+      var text = $(this).val()
+      $.post('/read', { action: "render", source: text }, function(data) {
+        $('#preview').html(data)
+      })
+    })
+  })
+</script>
+</html>

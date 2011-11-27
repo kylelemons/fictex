@@ -54,6 +54,10 @@ func (n Node) str(w io.Writer, depth int) {
 	}
 }
 
+func ParseString(s string) (Node, os.Error) {
+	return Parse(strings.NewReader(s))
+}
+
 func Parse(r io.Reader) (Node, os.Error) {
 	br, ok := r.(*bufio.Reader)
 	if !ok {
