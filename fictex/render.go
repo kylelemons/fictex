@@ -45,7 +45,7 @@ var HTMLRenderer = Renderer{
 
 	NDash: "&ndash;",
 	MDash: "&mdash;",
-	HLine: "\n<hl>\n",
+	HLine: "\n<hl />\n",
 
 	Preview: StringPair{"<!-- Preview: %q -->\n", "<!-- /Preview -->\n"},
 }

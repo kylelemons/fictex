@@ -62,15 +62,32 @@ var parseTests = []struct {
 		},
 	},
 	{
-		Desc:  "Unformatted Test",
-		Input: "/slant/*bold*_underline_",
+		Desc:  "Slant EOL",
+		Input: "This line /ends slanted",
 		Output: Node{
 			Type: Group,
 			Child: []Node{{
 				Type: Paragraph,
 				Child: []Node{{
 					Type: Text,
-					Text: []byte("/slant/*bold*_underline_"),
+					Text: []byte("This line "),
+				}, {
+					Type: Slant,
+					Text: []byte("ends slanted"),
+				}},
+			}},
+		},
+	},
+	{
+		Desc:  "Slant Escaped",
+		Input: "a // b",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("a / b"),
 				}},
 			}},
 		},
@@ -151,7 +168,7 @@ var parseTests = []struct {
 	},
 	{
 		Desc:  "Preview",
-		Input: "a\n\n<<short\nlong1\n\nlong2\n>>\nb",
+		Input: "a\n\n<short\nlong1\n\nlong2\n>\nb",
 		Output: Node{
 			Type: Group,
 			Child: []Node{{
