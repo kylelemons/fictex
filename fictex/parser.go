@@ -7,7 +7,10 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode"
 )
+
+// TODO(kevlar): Make this support UTF-8 (e.g. ReadRune instead of ReadByte)
 
 type nodeType int
 const (
@@ -304,7 +307,10 @@ func (p *parser) readFormatted() (Node, os.Error) {
 		}
 		p.ReadByte()
 		if pair[0] == start {
-			if len(pair) == 1 || pair[1] == '\n' || pair[1] == ' ' {
+			if len(pair) == 1 {
+				break
+			}
+			if r := int(pair[1]); unicode.IsSpace(r) || unicode.IsPunct(r) {
 				break
 			}
 		}
