@@ -140,19 +140,27 @@ preview:
 		return n, err
 	}
 
+more:
 	for {
 		c, err := p.ReadByte()
 		if err != nil {
 			return n, err
 		}
 
-		if c == '>' {
-			break
+		var next Node
+		switch c {
+			case '>':
+				break more
+			case '\n', '\t', ' ':
+				continue // slurp whitespace
+			case '<':
+				next, err = p.readPreview() // sub preview
+			default:
+				p.UnreadByte()
+				next, err = p.readParagraph(true)
 		}
-		p.UnreadByte()
 
-		node, err := p.readParagraph(true)
-		n.Child = append(n.Child, node)
+		n.Child = append(n.Child, next)
 		if err != nil {
 			return n, err
 		}

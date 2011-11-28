@@ -1,9 +1,12 @@
 package fictex
 
 import (
-	"testing"
-	"strings"
+	"bytes"
+	"io/ioutil"
+	"os"
 	"reflect"
+	"strings"
+	"testing"
 )
 
 var parseTests = []struct {
@@ -202,6 +205,32 @@ var parseTests = []struct {
 			}},
 		},
 	},
+	{
+		Desc:  "Rule in Preview",
+		Input: "<a\nb\n\n-----\n\nc\n>",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Preview,
+				Text: []byte("a"),
+				Child: []Node{{
+					Type: Paragraph,
+					Child: []Node{{
+						Type: Text,
+						Text: []byte("b"),
+					}},
+				}, {
+					Type: HLine,
+				}, {
+					Type: Paragraph,
+					Child: []Node{{
+						Type: Text,
+						Text: []byte("c"),
+					}},
+				}},
+			}},
+		},
+	},
 }
 
 func TestParse(t *testing.T) {
@@ -217,5 +246,20 @@ func TestParse(t *testing.T) {
 			t.Logf("Got:\n%s", out)
 			t.Logf("Want:\n%s", test.Output)
 		}
+	}
+}
+
+func BenchmarkParse(b *testing.B) {
+	file, err := os.Open("testdata/lipsum.txt")
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		Parse(bytes.NewBuffer(data))
 	}
 }

@@ -2,6 +2,8 @@ package fictex
 
 import (
 	"bytes"
+	"io/ioutil"
+	"os"
 	"testing"
 )
 
@@ -69,7 +71,7 @@ var renderTests = []struct{
 			}},
 		},
 		Text: "-- ---\n-----\n",
-		HTML: "&ndash; &mdash;\n<hl />\n",
+		HTML: "&ndash; &mdash;\n<hr />\n",
 	},
 	{
 		Desc: "Preview",
@@ -108,5 +110,26 @@ func TestRender(t *testing.T) {
 		if got, want := b.String(), test.HTML; got != want {
 			t.Errorf("%s: renderhtml = %q, want %q", desc, got, want)
 		}
+	}
+}
+
+func BenchmarkRender(b *testing.B) {
+	file, err := os.Open("testdata/lipsum.txt")
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		panic(err)
+	}
+	fic, err := Parse(bytes.NewBuffer(data))
+	if err != nil {
+		panic(err)
+	}
+	b.ResetTimer()
+	buf := new(bytes.Buffer)
+	for i := 0; i < b.N; i++ {
+		buf.Truncate(0)
+		HTMLRenderer.Render(buf, fic)
 	}
 }
