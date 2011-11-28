@@ -28,6 +28,10 @@
     .big div {
       padding: 10px;
     }
+    .big form {
+      padding: 3px;
+      text-align: center;
+    }
     .big textarea {
       width: 100%;
       height: 100%;
@@ -42,28 +46,73 @@
     hr {
       margin: 15px 40%;
     }
+
+    .pre {
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
   <div class='left'>
     <form class='big' onsubmit='return false'>
-      <textarea id='text'></textarea>
+      <textarea id='source'></textarea>
     </form>
   </div>
   <div class='right'>
     <div class='big'>
+      <form>
+        <input type='radio' name='display' id='fmt' checked> Formatted
+        |
+        <input type='radio' name='display' id='raw'> Raw
+      </form>
       <div id='preview'></div>
     </div>
   </div>
 </body>
 <script>
-  $(function() {
-    $('#text').keyup(function(){
-      var text = $(this).val()
-      $.post('/read', { action: "render", source: text }, function(data) {
-        $('#preview').html(data)
-      })
+  var throttle = false;
+  var pause = false;
+  var waitms = 100;
+
+  var pending = false;
+
+  function sync() {
+    if (pending) {
+      console.log("Ajax request still pending");
+      return;
+    }
+    pending = true;
+
+    var text = $('#source').val();
+    var jqXHR = $.post('/read', { action: "render", source: text })
+    
+    jqXHR.done(function(data) {
+      if ($('#fmt').is(':checked')) {
+        $('#preview').html(data).removeClass('pre');
+      } else {
+        $('#preview').text(data).addClass('pre');
+      }
+    });
+
+    jqXHR.always(function() {
+      pending = false;
     })
+  }
+
+  $(function() {
+    $('#source').keyup(function(ev) {
+      if (throttle) {
+        if (pause) {
+          return;
+        }
+        pause = true;
+        setTimeout('pause = false', waitms);
+      }
+
+      sync();
+    });
+    $('input[type=radio]').change(sync);
   })
 </script>
 </html>

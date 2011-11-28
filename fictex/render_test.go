@@ -71,7 +71,7 @@ var renderTests = []struct{
 			}},
 		},
 		Text: "-- ---\n-----\n",
-		HTML: "&ndash; &mdash;\n<hr />\n",
+		HTML: "&ndash; &mdash;<hr />\n",
 	},
 	{
 		Desc: "Preview",
@@ -87,7 +87,7 @@ var renderTests = []struct{
 			}},
 		},
 		Text: "\n<<short\n    long\n>>\n",
-		HTML: "<!-- Preview: \"short\" -->\n<p>\nlong\n</p>\n<!-- /Preview -->\n",
+		HTML: "<!-- Fold: \"short\" -->\n<p>\nlong\n</p>\n<!-- /Fold -->\n",
 	},
 }
 

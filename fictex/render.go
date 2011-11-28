@@ -45,9 +45,9 @@ var HTMLRenderer = Renderer{
 
 	NDash: "&ndash;",
 	MDash: "&mdash;",
-	HLine: "\n<hr />\n",
+	HLine: "<hr />\n",
 
-	Preview: StringPair{"<!-- Preview: %q -->\n", "<!-- /Preview -->\n"},
+	Preview: StringPair{"<!-- Fold: %q -->\n", "<!-- /Fold -->\n"},
 }
 
 func (r Renderer) Render(w io.Writer, n Node) os.Error {
