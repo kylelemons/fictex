@@ -195,7 +195,7 @@ func (p *parser) readParagraph(preview bool) (Node, os.Error) {
 	for {
 		c, err := p.ReadByte()
 		if err != nil {
-			return n, err
+			break
 		}
 
 		// End a preview with a > on its own line

@@ -170,6 +170,20 @@ var parseTests = []struct {
 		},
 	},
 	{
+		Desc:  "One Paragraph",
+		Input: "newline\n",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Paragraph,
+				Child: []Node{{
+					Type: Text,
+					Text: []byte("newline"),
+				}},
+			}},
+		},
+	},
+	{
 		Desc:  "Preview",
 		Input: "a\n\n<short\nlong1\n\nlong2\n>\nb",
 		Output: Node{

@@ -5,9 +5,15 @@ import (
 	"http"
 	"os"
 	"runtime/debug"
+	"template"
 
 	"appengine"
 )
+
+// Templates
+
+var reloadTemplates = !appengine.IsDevAppServer()
+var templates = template.SetMust(template.ParseTemplateGlob("templates/*.html"))
 
 // Set up the handlers
 
@@ -22,6 +28,15 @@ type Wrapper func(appengine.Context, http.ResponseWriter, *http.Request) os.Erro
 
 func (f Wrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
+
+	if (reloadTemplates) {
+		set, err := template.ParseTemplateGlob("templates/*.html")
+		if err != nil {
+			ctx.Infof("error parsing templates: %s", err)
+			http.Error(w, err.String(), http.StatusInternalServerError)
+		}
+		templates = set
+	}
 
 	defer func() {
 		if r := recover(); r != nil {
