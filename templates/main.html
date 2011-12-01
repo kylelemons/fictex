@@ -43,12 +43,12 @@
       position: absolute;
       top: 40%;
       width: 100%;
-      height: 40%;
+      height: 60%;
 
       overflow: scroll;
     }
 
-    #preview {
+    .pane {
       padding: 5px 10px;
     }
 
@@ -78,6 +78,7 @@
   <div class='bottom'>
     <div class='options'>
       <div class='displaystyle'>
+        <input type='radio' name='display' id='meta'><label for='meta'>Metadata</label>
         <input type='radio' name='display' id='fmt' checked><label for='fmt'>Formatted</label>
         <input type='radio' name='display' id='raw'><label for='raw'>View Source</label>
       </div>
@@ -88,7 +89,9 @@
         <input type='radio' name='format' id='bbcode'><label for='bbcode'>BBCode</label>
       </div>
     </div>
-    <div id='preview'></div>
+    <div class='pane' id='metapane'></div>
+    <div class='pane' id='fmtpane'></div>
+    <div class='pane pre' id='rawpane'></div>
   </div>
 </body>
 <script>
@@ -98,7 +101,20 @@
 
   var pending = false;
 
+  function radioval(name) {
+    return $('input[name='+name+']:checked').attr('id');
+  }
+
+  function pane() {
+    var display = radioval('display');
+    $('.pane').hide();
+    $('#'+display+'pane').show();
+  }
+
   function sync() {
+    var format = radioval('format');
+
+
     if (pending) {
       console.log("Ajax request still pending");
       return;
@@ -109,11 +125,8 @@
     var jqXHR = $.post('/read', { action: "render", source: text })
     
     jqXHR.done(function(data) {
-      if ($('#fmt').is(':checked')) {
-        $('#preview').html(data).removeClass('pre');
-      } else {
-        $('#preview').text(data).addClass('pre');
-      }
+      $('#fmtpane').html(data);
+      $('#rawpane').text(data);
     });
 
     jqXHR.always(function() {
@@ -136,7 +149,10 @@
 
     $('.outputformat').buttonset();
     $('.displaystyle').buttonset();
-    $('input[type=radio]').change(sync);
+    $('input[name=display]').change(pane);
+    $('input[name=format]').change(sync);
+
+    pane()
   })
 </script>
 </html>
