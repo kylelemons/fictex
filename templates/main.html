@@ -1,30 +1,81 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <title>FicTeX - Fiction Formatting</title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
-  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.js"></script>
-  <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" />
-  <style>
+  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/> 
+  <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+  <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.js"></script>
+  <link rel="stylesheet" type='text/css' href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" />
+  <style type='text/css'>
     * {
       padding: 0;
       margin: 0;
     }
 
+    body {
+      font-size: 10pt;
+    }
+
+    /* JQuery UI Overrides */
+    .ui-widget {
+      font-size: 10pt;
+    }
+
+    /* My Fiction list */
+    .myfic {
+      position: absolute;
+      /* 100% height, 255px width, 10px padding */
+      top: 10px;
+      left: 10px;
+      bottom: 10px;
+      width: 235px;
+    }
+
+    .ficlist {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+
+      padding: 10px;
+      overflow: auto;
+    }
+
+    /* Current Fiction */
+    .current {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 250px;
+    }
+
     /* Editor */
     .top {
       position: absolute;
-      padding: 10px;
 
       top: 0;
-      bottom: 60%;
       left: 0;
       right: 0;
+      height: 40%;
     }
 
-    textarea {
+    .editor {
+      position: absolute;
+
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
       padding: 5px;
+
+    }
+
+    .editor textarea {
       width: 100%;
       height: 100%;
+      border: none;
       outline: none;
     }
 
@@ -38,18 +89,35 @@
       display: inline-block;
     }
 
+    .options * {
+      font-size: 8pt;
+    }
+
     /* Preview */
     .bottom {
       position: absolute;
       top: 40%;
       width: 100%;
       height: 60%;
+    }
 
-      overflow: scroll;
+    .panes {
+      position: absolute;
+      top: 40px;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
     }
 
     .pane {
-      padding: 5px 10px;
+      position: absolute;
+      top: 0px;
+      bottom: 0px;
+      left: 0px;
+      right: 0px;
+
+      padding: 10px;
+      overflow: auto;
     }
 
     /* General styling */
@@ -67,34 +135,66 @@
       font-family: monospace;
       white-space: pre-wrap;
     }
+
+    .border {
+      border-width: 1px;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: sans-serif;
+    }
+
+    h1 { font-size: 16pt; }
+    h2 { font-size: 14pt; }
+    h3 { font-size: 13pt; }
+    h4 { font-size: 12pt; }
+    h5 { font-size: 11pt; }
+    h6 { font-size: 10pt; }
+
   </style>
 </head>
 <body>
-  <div class='top'>
-    <div class='editor'>
-      <textarea class="ui-corner-all ui-widget-content" id='source'></textarea>
+  <div class='myfic'>
+    <div class='ficlist border'>
+      <h1>Stories</h1>
+      <ul>
+        <li>
+        </li>
+      </ul>
     </div>
   </div>
-  <div class='bottom'>
-    <div class='options'>
-      <div class='displaystyle'>
-        <input type='radio' name='display' id='meta'><label for='meta'>Metadata</label>
-        <input type='radio' name='display' id='fmt' checked><label for='fmt'>Formatted</label>
-        <input type='radio' name='display' id='raw'><label for='raw'>View Source</label>
-      </div>
-      <div class='outputformat'>
-        <input type='radio' name='format' id='text'><label for='text'>Plain Text</label>
-        <input type='radio' name='format' id='html'><label for='html'>HTML</label>
-        <input type='radio' name='format' id='lj' checked><label for='lj'>LiveJournal</label>
-        <input type='radio' name='format' id='bbcode'><label for='bbcode'>BBCode</label>
+  <div class='current'>
+    <div class='top'>
+      <div class='editor border'>
+        <textarea id='source' rows='12' cols='32'></textarea>
       </div>
     </div>
-    <div class='pane' id='metapane'></div>
-    <div class='pane' id='fmtpane'></div>
-    <div class='pane pre' id='rawpane'></div>
+    <div class='bottom'>
+      <div class='options'>
+        <div class='displaystyle'>
+          <input type='radio' name='display' id='meta' /><label for='meta'>Info</label>
+          <input type='radio' name='display' id='fmt' checked='checked' /><label for='fmt'>Preview</label>
+          <input type='radio' name='display' id='raw' /><label for='raw'>View Source</label>
+        </div>
+        <div class='outputformat'>
+          <input type='radio' name='format' id='text' /><label for='text'>Text</label>
+          <input type='radio' name='format' id='html' /><label for='html'>HTML</label>
+          <input type='radio' name='format' id='lj' checked='checked' /><label for='lj'>LiveJournal</label>
+          <input type='radio' name='format' id='bbcode' /><label for='bbcode'>BBCode</label>
+        </div>
+      </div>
+      <div class='panes'>
+        <div class='border pane' id='metapane'>
+          <div class='metadata'>
+            <h1 id='title'>Untitled Story</h1>
+          </div>
+        </div>
+        <div class='border pane' id='fmtpane'></div>
+        <div class='border pane pre' id='rawpane'></div>
+      </div>
+    </div>
   </div>
-</body>
-<script>
+  <script type='text/javascript'>
   var throttle = false;
   var pause = false;
   var waitms = 100;
@@ -147,6 +247,9 @@
       sync();
     });
 
+    // Style some things nicely
+    $('.border').addClass('ui-corner-all').addClass('ui-widget-content')
+
     $('.outputformat').buttonset();
     $('.displaystyle').buttonset();
     $('input[name=display]').change(pane);
@@ -154,5 +257,6 @@
 
     pane()
   })
-</script>
+  </script>
+</body>
 </html>
