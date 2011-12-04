@@ -57,6 +57,10 @@ func (n Node) str(w io.Writer, depth int) {
 	}
 }
 
+func ParseBytes(b []byte) (Node, os.Error) {
+	return Parse(bytes.NewBuffer(b))
+}
+
 func ParseString(s string) (Node, os.Error) {
 	return Parse(strings.NewReader(s))
 }

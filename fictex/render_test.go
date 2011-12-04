@@ -80,7 +80,7 @@ var renderTests = []struct{
 			}},
 		},
 		Text: "-- ---\n-----\n",
-		HTML: "&ndash; &mdash;<hr />\n",
+		HTML: "&#8211; &#8212;<hr />\n",
 	},
 	{
 		Desc: "Preview",
