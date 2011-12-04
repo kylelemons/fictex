@@ -79,6 +79,16 @@
       outline: none;
     }
 
+    /* Word Count */
+    .stats {
+      position: absolute;
+      top: 0px;
+      right: 25px;
+
+      font-size: 10px;
+      font-family: sans-serif;
+    }
+
     /* Options */
     .options {
       padding: 5px;
@@ -170,6 +180,9 @@
       </div>
     </div>
     <div class='bottom'>
+      <div class='stats'>
+        <span id='wordcount'>Type to count</span> words
+      </div>
       <div class='options'>
         <div class='displaystyle'>
           <input type='radio' name='display' id='meta' /><label for='meta'>Info</label>
@@ -225,6 +238,7 @@
     
     jqXHR.done(function(data) {
       pending = false;
+
       $('#rawpane').text(data);
       $('#fmtpane').html(data);
     });
@@ -257,6 +271,9 @@
       }
 
       sync();
+
+      var words = $('#source').val().replace(/[^a-z]+/g, ' ').match(/\S+(\s|\W)*/g).length;
+      $('#wordcount').text(words);
     });
 
     // Style some things nicely
