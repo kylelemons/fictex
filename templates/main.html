@@ -224,6 +224,7 @@
     var jqXHR = $.post('/read', { action: "render", source: text })
     
     jqXHR.done(function(data) {
+      pending = false;
       $('#rawpane').text(data);
       $('#fmtpane').html(data);
     });

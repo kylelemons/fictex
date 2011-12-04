@@ -49,8 +49,8 @@ var HTMLRenderer = Renderer{
 	Underline: StringPair{"<u>", "</u>"},
 	Paragraph: StringPair{"<p>\n", "\n</p>\n"},
 
-	NDash: "&ndash;",
-	MDash: "&mdash;",
+	NDash: "&#8211;", //"&ndash;",
+	MDash: "&#8212;", //"&mdash;",
 	HLine: "<hr />\n",
 
 	Preview: StringPair{"<!-- Fold: %q -->\n", "<!-- /Fold -->\n"},
