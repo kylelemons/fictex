@@ -6,8 +6,8 @@ Formatting:
   [text] [text url]     Makes text into a link
   -- and ---            Makes n-dash (–) or m-dash (—)
   -----                 5 or more -s alone on a line makes a horizontal line
-  <<text>>              Starts an lj-cut with text as the preview text
-  >><<                  Ends an lj-cut
+  <text                 Starts an lj-cut with text as the preview text
+  >                     Ends an lj-cut
                         Empty lines separate paragraphs
 
 Design:
