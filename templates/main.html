@@ -208,84 +208,93 @@
     </div>
   </div>
   <script type='text/javascript'>
-  var throttle = false;
-  var pause = false;
-  var waitms = 100;
+var throttle = false;
+var pause = false;
+var waitms = 100;
 
-  var pending = false;
+var pending = false;
 
-  function radioval(name) {
-    return $('input[name='+name+']:checked').attr('id');
+// Prevent fx/sf from crapping out on the logging
+if (console === undefined) {
+  console = {
+    log: function(){},
+  };
+}
+
+function radioval(name) {
+  return $('input[name='+name+']:checked').attr('id');
+}
+
+function pane() {
+  var display = radioval('display');
+  $('.pane').hide();
+  $('#'+display+'pane').show();
+}
+
+function sync() {
+  var format = radioval('format');
+
+  if (pending) {
+    console.log("Ajax request still pending");
+    return;
   }
+  pending = true;
 
-  function pane() {
-    var display = radioval('display');
-    $('.pane').hide();
-    $('#'+display+'pane').show();
-  }
+  var text = $('#source').val();
+  var jqXHR = $.post('/read', { action: "render", source: text });
+  
+  jqXHR.done(function(data) {
+    pending = false;
 
-  function sync() {
-    var format = radioval('format');
+    $('#rawpane').text(data);
+    $('#fmtpane').html(data);
+  });
 
-    if (pending) {
-      console.log("Ajax request still pending");
-      return;
+  jqXHR.always(function() {
+    pending = false;
+  });
+}
+
+function save() {
+  var text = $('#source').val();
+  var jqXHR = $.post('/save', { source: text });
+
+  console.log('Saving');
+  
+  jqXHR.fail(function() {
+    console.log('Failed to save');
+  });
+}
+
+$(function() {
+  $('#source').keyup(function(ev) {
+    if (throttle) {
+      if (pause) {
+        return;
+      }
+      pause = true;
+      setTimeout('pause = false', waitms);
     }
-    pending = true;
+    if (ev.which == $.ui.keyCode.PERIOD || ev.which == $.ui.keyCode.ENTER) {
+      save();
+    }
 
-    var text = $('#source').val();
-    var jqXHR = $.post('/read', { action: "render", source: text })
-    
-    jqXHR.done(function(data) {
-      pending = false;
+    sync();
 
-      $('#rawpane').text(data);
-      $('#fmtpane').html(data);
-    });
+    var words = $('#source').val().replace(/[^a-z]+/g, ' ').match(/\S+(\s|\W)*/g).length;
+    $('#wordcount').text(words);
+  });
 
-    jqXHR.always(function() {
-      pending = false;
-    })
-  }
+  // Style some things nicely
+  $('.border').addClass('ui-corner-all').addClass('ui-widget-content');
 
-  function save() {
-    var text = $('#source').val();
-    var jqXHR = $.post('/save', { source: text })
-    
-    jqXHR.fail(function() {
-      console.log('Failed to save');
-    });
-  }
+  $('.outputformat').buttonset();
+  $('.displaystyle').buttonset();
+  $('input[name=display]').change(pane);
+  $('input[name=format]').change(sync);
 
-  $(function() {
-    $('#source').keyup(function(ev) {
-      if (throttle) {
-        if (pause) {
-          return;
-        }
-        pause = true;
-        setTimeout('pause = false', waitms);
-      }
-      if (ev.which == $.ui.keyCode.PERIOD || ev.which == $.ui.keyCode.ENTER) {
-        save();
-      }
-
-      sync();
-
-      var words = $('#source').val().replace(/[^a-z]+/g, ' ').match(/\S+(\s|\W)*/g).length;
-      $('#wordcount').text(words);
-    });
-
-    // Style some things nicely
-    $('.border').addClass('ui-corner-all').addClass('ui-widget-content')
-
-    $('.outputformat').buttonset();
-    $('.displaystyle').buttonset();
-    $('input[name=display]').change(pane);
-    $('input[name=format]').change(sync);
-
-    pane()
-  })
+  pane();
+});
   </script>
 </body>
 </html>
