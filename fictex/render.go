@@ -2,6 +2,7 @@ package fictex
 
 import (
 	"fmt"
+	"html"
 	"io"
 	"os"
 )
@@ -9,6 +10,9 @@ import (
 type StringPair [2]string
 
 type Renderer struct {
+	// The Escape function is used to escape plaintext
+	Escape func(string) string
+
 	// The following are used to bracket the appropriate text
 	Bold StringPair
 	Slant StringPair
@@ -38,6 +42,8 @@ var TextRenderer = Renderer{
 }
 
 var HTMLRenderer = Renderer{
+	Escape: html.EscapeString,
+
 	Bold: StringPair{"<b>", "</b>"},
 	Slant: StringPair{"<i>", "</i>"},
 	Underline: StringPair{"<u>", "</u>"},
@@ -51,6 +57,13 @@ var HTMLRenderer = Renderer{
 }
 
 func (r Renderer) Render(w io.Writer, n Node) os.Error {
+	esc := func(b []byte) string {
+		if r.Escape == nil {
+			return string(b)
+		}
+		return r.Escape(string(b))
+	}
+
 	var render func(Node) os.Error
 	render = func(n Node) (err os.Error) {
 		switch n.Type {
@@ -61,13 +74,13 @@ func (r Renderer) Render(w io.Writer, n Node) os.Error {
 					}
 				}
 			case Text:
-				_, err = w.Write(n.Text)
+				_, err = io.WriteString(w, esc(n.Text))
 			case Bold:
-				_, err = fmt.Fprintf(w, "%s%s%s", r.Bold[0], n.Text, r.Bold[1])
+				_, err = fmt.Fprintf(w, "%s%s%s", r.Bold[0], esc(n.Text), r.Bold[1])
 			case Slant:
-				_, err = fmt.Fprintf(w, "%s%s%s", r.Slant[0], n.Text, r.Slant[1])
+				_, err = fmt.Fprintf(w, "%s%s%s", r.Slant[0], esc(n.Text), r.Slant[1])
 			case Underline:
-				_, err = fmt.Fprintf(w, "%s%s%s", r.Underline[0], n.Text, r.Underline[1])
+				_, err = fmt.Fprintf(w, "%s%s%s", r.Underline[0], esc(n.Text), r.Underline[1])
 			case Paragraph:
 				if _, err := io.WriteString(w, r.Paragraph[0]); err != nil {
 					return err
@@ -83,7 +96,7 @@ func (r Renderer) Render(w io.Writer, n Node) os.Error {
 			case HLine:
 				_, err = io.WriteString(w, r.HLine)
 			case Preview:
-				if _, err := fmt.Fprintf(w, r.Preview[0], n.Text); err != nil {
+				if _, err := fmt.Fprintf(w, r.Preview[0], esc(n.Text)); err != nil {
 					return err
 				}
 				for _, n := range n.Child {
@@ -93,7 +106,7 @@ func (r Renderer) Render(w io.Writer, n Node) os.Error {
 				}
 				_, err = io.WriteString(w, r.Preview[1])
 			default:
-				_, err = fmt.Fprintf(w, "Unhandled %s\n", n)
+				_, err = fmt.Fprintf(w, "Unhandled %T\n", n)
 		}
 		return err
 	}

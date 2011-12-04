@@ -23,6 +23,15 @@ var renderTests = []struct{
 		HTML: "test",
 	},
 	{
+		Desc: "Escape test",
+		Input: Node{
+			Type: Text,
+			Text: []byte("<"),
+		},
+		Text: "<",
+		HTML: "&lt;",
+	},
+	{
 		Desc: "Group",
 		Input: Node{
 			Type: Group,

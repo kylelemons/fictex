@@ -245,6 +245,16 @@ var parseTests = []struct {
 			}},
 		},
 	},
+	{
+		Desc:  "Bad Preview",
+		Input: "<",
+		Output: Node{
+			Type: Group,
+			Child: []Node{{
+				Type: Preview,
+			}},
+		},
+	},
 }
 
 func TestParse(t *testing.T) {

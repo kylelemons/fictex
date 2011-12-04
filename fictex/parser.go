@@ -128,7 +128,7 @@ func (p *parser) readPreview() (Node, os.Error) {
 preview:
 	line, err := p.ReadSlice('\n')
 
-	if line[len(line)-1] == '\n' {
+	if len(line) > 0 && line[len(line)-1] == '\n' {
 		line = line[:len(line)-1]
 	}
 	n.Text = append(n.Text, line...)

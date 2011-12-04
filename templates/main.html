@@ -1,8 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <title>FicTeX - Fiction Formatting</title>
-  <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/> 
   <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
   <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.js"></script>
   <link rel="stylesheet" type='text/css' href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" />
@@ -166,7 +166,7 @@
   <div class='current'>
     <div class='top'>
       <div class='editor border'>
-        <textarea id='source' rows='12' cols='32'></textarea>
+        <textarea id='source' rows='12' cols='32'>{{.Saved}}</textarea>
       </div>
     </div>
     <div class='bottom'>
@@ -189,8 +189,8 @@
             <h1 id='title'>Untitled Story</h1>
           </div>
         </div>
-        <div class='border pane' id='fmtpane'></div>
-        <div class='border pane pre' id='rawpane'></div>
+        <div class='border pane' id='fmtpane'>{{.SavedHTML}}</div>
+        <div class='border pane pre' id='rawpane'>{{.SavedSource}}</div>
       </div>
     </div>
   </div>
@@ -214,7 +214,6 @@
   function sync() {
     var format = radioval('format');
 
-
     if (pending) {
       console.log("Ajax request still pending");
       return;
@@ -225,13 +224,22 @@
     var jqXHR = $.post('/read', { action: "render", source: text })
     
     jqXHR.done(function(data) {
-      $('#fmtpane').html(data);
       $('#rawpane').text(data);
+      $('#fmtpane').html(data);
     });
 
     jqXHR.always(function() {
       pending = false;
     })
+  }
+
+  function save() {
+    var text = $('#source').val();
+    var jqXHR = $.post('/save', { source: text })
+    
+    jqXHR.fail(function() {
+      console.log('Failed to save');
+    });
   }
 
   $(function() {
@@ -242,6 +250,9 @@
         }
         pause = true;
         setTimeout('pause = false', waitms);
+      }
+      if (ev.which == $.ui.keyCode.PERIOD || ev.which == $.ui.keyCode.ENTER) {
+        save();
       }
 
       sync();
