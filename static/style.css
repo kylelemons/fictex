@@ -141,6 +141,19 @@ body.rendered {
 }
 
 /* Metadata */
+#metadata table {
+  font-size: 12pt;
+  font-family: sans-serif;
+  border: none; 
+}
+
+#metadata table th {
+  width: 130px;
+  padding: 0px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
 #metadata label {
   display: inline-block;
   width: 130px;

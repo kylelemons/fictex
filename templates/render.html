@@ -8,8 +8,10 @@
 <body class="rendered">
   <div id="metadata">
     <h1>{{.Title}}</h1>
+    <table>
 {{range .Meta}}
-    <h3><label>{{.Label}}:</label><span>{{.Value}}</span></h3>{{end}}
+    <tr><th>{{.Label}}:</th><td>{{.Value}}</td></tr>{{end}}
+    </table>
   </div>
   <div id="story">
     <hr />
