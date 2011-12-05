@@ -30,6 +30,7 @@ func NewStory(c appengine.Context, id string, owner *datastore.Key) *Story {
 	return &Story{
 		key:  datastore.NewKey(c, "Story", id, 0, owner),
 		ID:   id,
+		Meta: make(map[string]*Property),
 	}
 }
 
@@ -95,7 +96,7 @@ func GetStory(c appengine.Context, id string) (*Story, os.Error) {
 		return nil, os.NewError(id + ": no such story")
 	}
 
-	s := &Story{ key: keys[0]}
+	s := &Story{key: keys[0]}
 	return s, s.Get(c)
 }
 

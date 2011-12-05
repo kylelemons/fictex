@@ -187,8 +187,6 @@ func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Err
 		return err
 	}
 
-	c.Infof("meta: %#v", in)
-
 	id, _ := in["id"].(string)
 	source, _ := in["source"].(string)
 
@@ -201,12 +199,11 @@ func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Err
 			id = GenID(title)
 			out["id"] = id
 			refreshStories = true
+			c.Infof("Creating a new story: %q as %s", title, id)
 		}
 	default:
 		out["id"] = id
 	}
-
-	c.Debugf("Meta: %#v", in["meta"])
 
 	_, k := UserKey(c)
 	s := NewStory(c, id, k)
