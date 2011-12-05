@@ -57,3 +57,7 @@ type ErrorCoder interface {
 type Unauthorized string
 func (e Unauthorized) String() string { return string(e) + ": unauthorized" }
 func (e Unauthorized) ErrorCode() int { return http.StatusUnauthorized }
+
+type NotFound string
+func (e NotFound) String() string { return string(e) + ": not found" }
+func (e NotFound) ErrorCode() int { return http.StatusNotFound }
