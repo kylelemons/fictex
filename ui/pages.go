@@ -99,7 +99,7 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		data.Stories = string(js)
 	}
 
-	return templates.Execute(w, "main.html", data)
+	return templates.Execute(w, "edit.html", data)
 }
 
 func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {

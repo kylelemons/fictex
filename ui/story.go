@@ -79,6 +79,10 @@ func (s *Story) Get(c appengine.Context) os.Error {
 }
 
 func GetStory(c appengine.Context, id string) (*Story, os.Error) {
+	if len(id) != 40 {
+		return nil, os.NewError("invalid story id")
+	}
+
 	q := datastore.NewQuery("Story")
 	q.Filter("ID =", id)
 	q.KeysOnly()
