@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>FicTeX - Fiction Formatting</title>
+  <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js"></script>
+  <script type='text/javascript' src="https://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.js"></script>
+  <link rel="stylesheet" type='text/css' href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" />
+  <link rel="stylesheet" type='text/css' href="/static/style.css" />
+</head>
+<body>
+  <div class='myfic'>
+    <div class='ficlist border'>
+      <h1>Stories</h1>
+      <ul><li><a href='/'>Home</a></li></ul>
+      <div id='stories' />
+    </div>
+  </div>
+  <div class='current'>
+    <div class='top'>
+      <div class='editor border'>
+{{if .Source}}
+        <textarea id='source' rows='12' cols='32'>{{.Source}}</textarea>
+{{else}}
+        <textarea id='source' rows='12' cols='32'>Start typing your story here.
+
+As you type, it will be rendered into the preview box below.  Whenever you type a period or hit the enter key, your story will automatically be saved into the cloud.  To begin with, you will be editing a "scratch" story that will show up first whenever you visit.  Once you change the title of the story in the Info pane below, the story will be saved separately and available in the menu on your left.
+
+When you are ready to publish your story, you can copy directly from the "View Source" pane below.  
+
+-----
+
+A blank line separates paragraphs.  Double (--) and triple (---) dashes are converted into the apropriate unicode dashes.  Five dashes on a line (as above) creates a horizontal rule.  Some basic formatting is allowed: *bold* /slant/ _underline_.
+</textarea>
+{{end}}
+      </div>
+    </div>
+    <div class='bottom'>
+      <div class='stats'>
+        <div>
+          <span id='wordcount'>Type to count</span> words
+        </div><div>
+          <span id='savestatus'>Loaded</span>
+        </div>
+      </div>
+      <div class='options'>
+        <div class='displaystyle'>
+          <input type='radio' name='display' id='meta' /><label for='meta'>Info</label>
+          <input type='radio' name='display' id='fmt' checked='checked' /><label for='fmt'>Preview</label>
+          <input type='radio' name='display' id='raw' /><label for='raw'>View Source</label>
+        </div>
+        <div class='outputformat'>
+          <input type='radio' name='format' id='text' /><label for='text'>Text</label>
+          <input type='radio' name='format' id='html' /><label for='html'>HTML</label>
+          <input type='radio' name='format' id='lj' checked='checked' /><label for='lj'>LiveJournal</label>
+          <input type='radio' name='format' id='bbcode' /><label for='bbcode'>BBCode</label>
+        </div>
+        <div>
+          <input type='button' id='save' value='Save' />
+        </div>
+      </div>
+      <div class='panes'>
+        <div class='border pane' id='metapane'>
+          <div id='metadata'>
+{{if .Title}}
+            <h1><input type='text' id='title' value='{{.Title}}' /></h1>
+{{else}}
+            <h1><input type='text' id='title' value='Untitled Story' /></h1>
+{{end}}
+            <div id='metarows'>
+{{range .Meta}}
+              <h3>
+                <label for='{{.Id}}'>{{.Label}}</label><input type='text' id='{{.Id}}' value='{{.Value}}' />
+              </h3>
+{{else}}
+              <h3>
+                <label for='characters'>Characters</label><input type='text' id='characters' value='Original' />
+              </h3>
+              <h3>
+                <label for='rating'>Rating</label><input type='text' id='rating' value='PG-13' />
+              </h3>
+              <h3>
+                <label for='fandom'>Fandom</label><input type='text' id='fandom' value='None' />
+              </h3>
+{{end}}
+            </div>
+            <div class='buttonrow'>
+              <input type='button' id='addmeta' value='Add' />
+            </div>
+{{if .Id}}
+            <input type='hidden' id='storyid' value='{{.Id}}' />
+{{end}}
+          </div>
+        </div>
+        <div class='border pane' id='fmtpane'>{{.PreviewHTML}}</div>
+        <div class='border pane pre' id='rawpane'>{{.PreviewSource}}</div>
+      </div>
+    </div>
+  </div>
+  <div id='addmetadialog'>
+    <div id='tips'>Properties must be one word and contain only letters</div>
+    <label for='addmetaname'>Name:</label>
+    <input type='text' id='addmetaname' class='text ui-widget-content ui-corner-all' />
+  </div>
+  <script type='text/javascript'>
+<![CDATA[
+var throttle = false;
+var pause = false;
+var waitms = 100;
+
+var pending = false;
+
+// Prevent fx/sf from crapping out on the logging
+if (console === undefined) {
+  console = {
+    log: function(){},
+  };
+}
+
+function radioval(name) {
+  return $('input[name='+name+']:checked').attr('id');
+}
+
+function pane() {
+  var display = radioval('display');
+  $('.pane').hide();
+  $('#'+display+'pane').show();
+}
+
+function sync() {
+  var format = radioval('format');
+
+  if (pending) {
+    return;
+  }
+  pending = true;
+
+  var text = $('#source').val();
+  var jqXHR = $.post('/ajax', { action: "render", source: text });
+  
+  jqXHR.done(function(data) {
+    pending = false;
+
+    $('#rawpane').text(data);
+    try {
+      $('#fmtpane').html(data);
+    } catch(err) {
+      $('#fmtpane').text(data);
+    }
+  });
+
+  jqXHR.always(function() {
+    pending = false;
+  });
+}
+
+var savestatus = $('#savestatus');
+
+function save() {
+  var text = $('#source').val();
+  var meta = {};
+
+  $('#metadata input').each(function(){
+    var input = $(this);
+    var type = input.attr('type')
+    var name = input.attr('id');
+    var value = input.val();
+
+    if (type != 'text') {
+      return;
+    }
+
+    meta[name] = value;
+  });
+
+  var savedata = { source: text };
+  if (meta.title != 'Untitled Story') {
+    savedata.meta = meta;
+  }
+
+  var storyid = $('#storyid');
+  if (storyid.length > 0) {
+    savedata.id = storyid.val();
+  }
+
+  var jqXHR = $.post('/save', JSON.stringify(savedata));
+
+  savestatus.text('Saving...');
+  
+  jqXHR.fail(function() {
+    savestatus.text('Failed to save!');
+  });
+
+  jqXHR.done(function(data) {
+    if (data.id !== undefined) {
+      if (meta.id === undefined) {
+        var id = $('<input>').attr('type', 'hidden').attr('id', 'storyid').val(data.id);
+        $('#metadata').append(id);
+      }
+      savestatus.text('Story saved');
+    }
+    if (data.stories !== undefined) {
+      try {
+        loadstories(JSON.parse(data.stories));
+        console.log('Loaded new stories');
+      } catch(err) {
+        console.log('Failed to parse new story list', data.stories);
+      }
+    }
+    if (savestatus.text() == 'Saving...') {
+      savestatus.text('Autosaved');
+    }
+  });
+}
+
+function stats() {
+  var words = $('#source').val().replace(/[^a-z]+/g, ' ').match(/\S+(\s|\W)*/g).length;
+  $('#wordcount').text(words);
+}
+
+function addmeta() {
+  $('#addmetadialog').dialog('open');
+}
+
+function loadstories(stories) {
+  if (stories === undefined) {
+    return;
+  }
+
+  // TODO(kevlar): Make recursive
+  var list = $('<ul>');
+  for (var i = 0; i < stories.length; i++) {
+    var story = stories[i];
+    var item = $('<li>');
+    var link = $('<a>').attr('href', '/edit/'+story.id).text(story.name);
+    var read = $('<a>').attr('href', '/read/'+story.id).text('read');
+
+    $(item).append(link, ' (', read, ')');
+    $(list).append(item);
+  }
+  $('#stories').empty();
+  $('#stories').append(list);
+}
+
+$(function() {
+  $('#source').keyup(function(ev) {
+    savestatus.text('Edited');
+
+    if (throttle) {
+      if (pause) {
+        return;
+      }
+      pause = true;
+      setTimeout('pause = false', waitms);
+    }
+    if (ev.which == $.ui.keyCode.PERIOD || ev.which == $.ui.keyCode.ENTER) {
+      save();
+    }
+
+    sync();
+    stats();
+  });
+
+  // Style some things nicely
+  $('.border').addClass('ui-corner-all').addClass('ui-widget-content');
+
+  $('.outputformat').buttonset();
+  $('.displaystyle').buttonset();
+
+  $('input[name=display]').change(pane);
+  $('input[name=format]').change(sync);
+
+  $('input[type=button]').button();
+
+  $('#save').click(save);
+  $('#addmeta').click(addmeta);
+
+  $('#addmetadialog').dialog({
+    autoOpen: false,
+    width: 400,
+    modal: true,
+    title: 'Add Property',
+    buttons: {
+      Add: function() {
+        var name = $('#addmetaname');
+        var tips = $('#addmetadialog #tips');
+
+        name.removeClass('ui-state-error');
+        tips.text('');
+
+        var param = name.val();
+        if (param.length < 1) {
+          tips.text('You must provide a name for the parameter.');
+          name.addClass('ui-state-error');
+          name.focus();
+          return;
+        }
+        if (param.length > 32) {
+          tips.text('The parameter name must be 32 letters or fewer.');
+          name.addClass('ui-state-error');
+          name.focus();
+          return;
+        }
+        if (!param.match(/^[-_a-z0-9]+$/i)) {
+          tips.text('The parameter name may only contain letters, numbers, dash, and underscore.');
+          name.addClass('ui-state-error');
+          name.focus();
+          return;
+        }
+
+        var display = param;
+        var id = param.toLowerCase();
+
+        if ($('#'+id).length > 0) {
+          tips.text('The parameter name is already in use.');
+          name.addClass('ui-state-error');
+          name.focus();
+          return;
+        }
+
+        var label = $('<label>').attr('for', id).text(display);
+        var input = $('<input>').attr('type', 'text').attr('id', id);
+        var wrap = $('<h3>').append(label).append(input);
+        $('#metarows').append(wrap);
+
+        $(this).dialog('close');
+
+        input.focus();
+      },
+      Cancel: function() {
+        $(this).dialog('close');
+      },
+    },
+    close: function(){
+      $('input', this).val('').removeClass('ui-state-error');
+    },
+  });
+
+  pane();
+  stats();
+  loadstories(({{.Stories}}));
+});
+]]>
+  </script>
+</body>
+</html>
