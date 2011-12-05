@@ -18,7 +18,8 @@ import (
 
 func init() {
 	http.Handle("/", Wrapper(Edit))
-	http.Handle("/edit", Wrapper(Edit))
+	http.Handle("/edit/", Wrapper(Edit))
+	http.Handle("/read/", Wrapper(Read))
 	http.Handle("/ajax", Wrapper(Ajax))
 	http.Handle("/save", Wrapper(Save))
 }
@@ -27,8 +28,6 @@ func init() {
 
 func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {
 	w.Header().Set("Content-Type", "application/xhtml+xml; charset=UTF-8")
-
-	_, k := UserKey(c)
 
 	var id string
 	if strings.HasPrefix(r.URL.Path, "/edit/") {
@@ -61,7 +60,9 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 
 	var data maindata
 
+	_, k := UserKey(c)
 	s := NewStory(c, id, k)
+
 	if err := s.Get(c); err != nil {
 		if id != "autosave" {
 			return NotFound(r.URL.Path)
@@ -99,6 +100,58 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 	}
 
 	return templates.Execute(w, "main.html", data)
+}
+
+func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {
+	w.Header().Set("Content-Type", "application/xhtml+xml; charset=UTF-8")
+
+	var id string
+	if strings.HasPrefix(r.URL.Path, "/read/") {
+		id = r.URL.Path[len("/read/"):]
+	} else {
+		return NotFound(r.URL.Path)
+	}
+
+	type metadata struct{
+		Label string
+		Value string
+	}
+	type renderdata struct{
+		Title string
+		Meta  []metadata
+		HTML  string
+	}
+
+	var data renderdata
+
+	s, err := GetStory(c, id)
+	if err != nil {
+		return err
+	}
+
+	data.Title = html.EscapeString(s.Title)
+
+	for name, prop := range s.Meta {
+		if len(name) == 0 || len(prop.Name) == 0 {
+			c.Warningf("Zero-length property name?")
+			continue
+		}
+		data.Meta = append(data.Meta, metadata{
+			Label: html.EscapeString(strings.ToUpper(prop.Name[:1])+prop.Name[1:]),
+			Value: html.EscapeString(prop.Value),
+		})
+	}
+
+	if node, err := fictex.ParseBytes(s.Source); err == nil {
+		b := new(bytes.Buffer)
+		if err := fictex.HTMLRenderer.Render(b, node); err == nil {
+			data.HTML = b.String()
+		}
+	} else {
+		data.HTML = html.EscapeString(fmt.Sprintf("Error: %s", err))
+	}
+
+	return templates.Execute(w, "render.html", data)
 }
 
 func Ajax(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {

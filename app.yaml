@@ -9,10 +9,6 @@ handlers:
   upload: favicon.ico
   expiration: "7d"
 
-- url: /.*
-  script: _go_app
-  login: required
-
 - url: /read
   script: _go_app
   login: optional
@@ -20,6 +16,14 @@ handlers:
 - url: /task/.*
   script: _go_app
   login: admin
+
+- url: /static
+  static_dir: static
+  expiration: "10m"
+
+- url: /.*
+  script: _go_app
+  login: required
 
 builtins:
 - datastore_admin: on

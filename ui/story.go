@@ -20,6 +20,7 @@ func GenID(seed string) string {
 type Story struct {
 	key  *datastore.Key
 
+	ID     string
 	Title  string
 	Source []byte
 	Meta   map[string]*Property `datastore:"-"`
@@ -27,13 +28,9 @@ type Story struct {
 
 func NewStory(c appengine.Context, id string, owner *datastore.Key) *Story {
 	return &Story{
-		key: datastore.NewKey(c, "Story", id, 0, owner),
-		Meta: make(map[string]*Property),
+		key:  datastore.NewKey(c, "Story", id, 0, owner),
+		ID:   id,
 	}
-}
-
-func (s *Story) ID() string {
-	return s.key.StringID()
 }
 
 func (s *Story) Put(c appengine.Context) os.Error {
@@ -71,6 +68,7 @@ func (s *Story) Get(c appengine.Context) os.Error {
 			return err
 		}
 
+		s.Meta = make(map[string]*Property)
 		for i, prop := range props {
 			prop.key = keys[i]
 			s.Meta[prop.Name] = prop
@@ -78,6 +76,23 @@ func (s *Story) Get(c appengine.Context) os.Error {
 
 		return nil
 	}, nil)
+}
+
+func GetStory(c appengine.Context, id string) (*Story, os.Error) {
+	q := datastore.NewQuery("Story")
+	q.Filter("ID =", id)
+	q.KeysOnly()
+
+	keys, err := q.GetAll(c, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(keys) == 0 {
+		return nil, os.NewError(id + ": no such story")
+	}
+
+	s := &Story{ key: keys[0]}
+	return s, s.Get(c)
 }
 
 func JSONStoryList(c appengine.Context, user *datastore.Key) ([]byte, os.Error) {
