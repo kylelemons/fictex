@@ -51,8 +51,8 @@ A blank line separates paragraphs.  Double (--) and triple (---) dashes are conv
         </div>
         <div class='outputformat'>
           <input type='radio' name='format' id='text' /><label for='text'>Text</label>
-          <input type='radio' name='format' id='html' /><label for='html'>HTML</label>
-          <input type='radio' name='format' id='lj' checked='checked' /><label for='lj'>LiveJournal</label>
+          <input type='radio' name='format' id='html' checked='checked' /><label for='html'>HTML</label>
+          <input type='radio' name='format' id='lj' /><label for='lj'>LiveJournal</label>
           <input type='radio' name='format' id='bbcode' /><label for='bbcode'>BBCode</label>
         </div>
         <div>
@@ -136,7 +136,7 @@ function sync() {
   pending = true;
 
   var text = $('#source').val();
-  var jqXHR = $.post('/ajax', { action: "render", source: text });
+  var jqXHR = $.post('/ajax', { action: "render", format: format, source: text });
   
   jqXHR.done(function(data) {
     pending = false;

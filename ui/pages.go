@@ -159,13 +159,18 @@ func Ajax(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		return err
 	}
 
+	renderer := fictex.TextRenderer
+	if r, ok := Renderers[r.Form.Get("format")]; ok {
+		renderer = r
+	}
+
 	switch action := r.Form.Get("action"); action {
 	case "render":
 		node, err := fictex.ParseString(r.Form.Get("source"))
 		if err != nil {
 			return err
 		}
-		if err := fictex.HTMLRenderer.Render(w, node); err != nil {
+		if err := renderer.Render(w, node); err != nil {
 			return err
 		}
 	default:
@@ -256,4 +261,26 @@ func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Err
 		return err
 	}
 	return nil
+}
+
+var LiveJournalRenderer = fictex.Renderer{
+	Escape: fictex.HTMLRenderer.Escape,
+
+	Bold: fictex.HTMLRenderer.Bold,
+	Slant: fictex.HTMLRenderer.Slant,
+	Underline: fictex.HTMLRenderer.Underline,
+	Paragraph: fictex.HTMLRenderer.Paragraph,
+
+	NDash: fictex.HTMLRenderer.NDash,
+	MDash: fictex.HTMLRenderer.MDash,
+	HLine: fictex.HTMLRenderer.HLine,
+
+	Preview: fictex.StringPair{"<lj-cut text=\"%q\" -->\n", "</lj-cut>\n"},
+}
+
+var Renderers = map[string]fictex.Renderer{
+	"html": fictex.HTMLRenderer,
+	"lj": LiveJournalRenderer,
+	"text": fictex.TextRenderer,
+	"bbcode": fictex.TextRenderer,
 }

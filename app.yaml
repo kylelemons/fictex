@@ -9,7 +9,7 @@ handlers:
   upload: favicon.ico
   expiration: "7d"
 
-- url: /read
+- url: /read/.*
   script: _go_app
   login: optional
 
