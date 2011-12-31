@@ -275,7 +275,7 @@ var LiveJournalRenderer = fictex.Renderer{
 	MDash: fictex.HTMLRenderer.MDash,
 	HLine: fictex.HTMLRenderer.HLine,
 
-	Preview: fictex.StringPair{"<lj-cut text=%q -->\n", "</lj-cut>\n"},
+	Preview: fictex.StringPair{"<lj-cut text=%q>\n", "</lj-cut>\n"},
 }
 
 var Renderers = map[string]fictex.Renderer{
