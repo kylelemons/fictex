@@ -2,9 +2,9 @@ package ui
 
 import (
 	"crypto/sha1"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"json"
-	"os"
 	"time"
 
 	"appengine"
@@ -13,12 +13,12 @@ import (
 
 func GenID(seed string) string {
 	h := sha1.New()
-	fmt.Fprintf(h, "%s:%s", seed, time.LocalTime())
-	return fmt.Sprintf("%x", h.Sum())
+	fmt.Fprintf(h, "%s:%s", seed, time.Now())
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 type Story struct {
-	key  *datastore.Key
+	key *datastore.Key
 
 	ID     string
 	Title  string
@@ -34,8 +34,8 @@ func NewStory(c appengine.Context, id string, owner *datastore.Key) *Story {
 	}
 }
 
-func (s *Story) Put(c appengine.Context) os.Error {
-	return datastore.RunInTransaction(c, func(tx appengine.Context) os.Error {
+func (s *Story) Put(c appengine.Context) error {
+	return datastore.RunInTransaction(c, func(tx appengine.Context) error {
 		key, err := datastore.Put(tx, s.key, s)
 		if err != nil {
 			return err
@@ -53,12 +53,12 @@ func (s *Story) Put(c appengine.Context) os.Error {
 	}, nil)
 }
 
-func (s *Story) Get(c appengine.Context) os.Error {
+func (s *Story) Get(c appengine.Context) error {
 	// Construct the query once
 	q := datastore.NewQuery("Property")
 	q.Ancestor(s.key)
 
-	return datastore.RunInTransaction(c, func(tx appengine.Context) os.Error {
+	return datastore.RunInTransaction(c, func(tx appengine.Context) error {
 		if err := datastore.Get(tx, s.key, s); err != nil {
 			return err
 		}
@@ -79,9 +79,9 @@ func (s *Story) Get(c appengine.Context) os.Error {
 	}, nil)
 }
 
-func GetStory(c appengine.Context, id string) (*Story, os.Error) {
+func GetStory(c appengine.Context, id string) (*Story, error) {
 	if len(id) != 40 {
-		return nil, os.NewError("invalid story id")
+		return nil, errors.New("invalid story id")
 	}
 
 	q := datastore.NewQuery("Story")
@@ -93,16 +93,16 @@ func GetStory(c appengine.Context, id string) (*Story, os.Error) {
 		return nil, err
 	}
 	if len(keys) == 0 {
-		return nil, os.NewError(id + ": no such story")
+		return nil, errors.New(id + ": no such story")
 	}
 
 	s := &Story{key: keys[0]}
 	return s, s.Get(c)
 }
 
-func JSONStoryList(c appengine.Context, user *datastore.Key) ([]byte, os.Error) {
-	type storydata struct{
-		Id string `json:"id"`
+func JSONStoryList(c appengine.Context, user *datastore.Key) ([]byte, error) {
+	type storydata struct {
+		Id   string `json:"id"`
 		Name string `json:"name"`
 	}
 	var stories []storydata
@@ -124,7 +124,7 @@ func JSONStoryList(c appengine.Context, user *datastore.Key) ([]byte, os.Error) 
 			continue
 		}
 		stories = append(stories, storydata{
-			Id: key.StringID(),
+			Id:   key.StringID(),
 			Name: s.Title,
 		})
 	}
@@ -141,15 +141,15 @@ type Property struct {
 
 func (s *Story) NewProperty(c appengine.Context, name, value string) *Property {
 	p := &Property{
-		key: datastore.NewKey(c, "Property", name, 0, s.key),
-		Name: name,
+		key:   datastore.NewKey(c, "Property", name, 0, s.key),
+		Name:  name,
 		Value: value,
 	}
 	s.Meta[name] = p
 	return p
 }
 
-func (p *Property) Put(c appengine.Context) os.Error {
+func (p *Property) Put(c appengine.Context) error {
 	key, err := datastore.Put(c, p.key, p)
 	if err != nil {
 		return err
@@ -160,6 +160,6 @@ func (p *Property) Put(c appengine.Context) os.Error {
 	return nil
 }
 
-func (p *Property) Get(c appengine.Context) os.Error {
+func (p *Property) Get(c appengine.Context) error {
 	return datastore.Get(c, p.key, p)
 }

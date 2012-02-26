@@ -11,7 +11,7 @@ import (
 func UserKey(c appengine.Context) (*user.User, *datastore.Key) {
 	user := user.Current(c)
 
-	uid := user.Id
+	uid := user.ID
 	if uid == "" {
 		uid = fmt.Sprintf("%s@%s",
 			user.FederatedIdentity,

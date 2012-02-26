@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"unicode"
 )
@@ -13,18 +12,20 @@ import (
 // TODO(kevlar): Make this support UTF-8 (e.g. ReadRune instead of ReadByte)
 
 type nodeType int
+
 const (
-	Group nodeType = iota  // A group of Child nodes (no Text)
-	Text                   // A single node with Text filled in
-	Paragraph              // A sequence of Child nodes (no Text) in a paragraph
+	Group     nodeType = iota // A group of Child nodes (no Text)
+	Text                      // A single node with Text filled in
+	Paragraph                 // A sequence of Child nodes (no Text) in a paragraph
 	Bold
 	Slant
 	Underline
-	MDash                  // No Text or Child
-	NDash                  // No Text or Child
-	HLine                  // No Text or Child
-	Preview                // Text is the preview, Children are the full
+	MDash   // No Text or Child
+	NDash   // No Text or Child
+	HLine   // No Text or Child
+	Preview // Text is the preview, Children are the full
 )
+
 var typeString = [...]string{
 	"Group", "Text", "Paragraph", "Bold", "Slant",
 	"Underline", "M-Dash", "N-Dash", "Separator", "Preview",
@@ -57,15 +58,15 @@ func (n Node) str(w io.Writer, depth int) {
 	}
 }
 
-func ParseBytes(b []byte) (Node, os.Error) {
+func ParseBytes(b []byte) (Node, error) {
 	return Parse(bytes.NewBuffer(b))
 }
 
-func ParseString(s string) (Node, os.Error) {
+func ParseString(s string) (Node, error) {
 	return Parse(strings.NewReader(s))
 }
 
-func Parse(r io.Reader) (Node, os.Error) {
+func Parse(r io.Reader) (Node, error) {
 	br, ok := r.(*bufio.Reader)
 	if !ok {
 		br = bufio.NewReader(r)
@@ -74,14 +75,14 @@ func Parse(r io.Reader) (Node, os.Error) {
 
 	var (
 		n, m Node
-		err  os.Error
+		err  error
 	)
 
 	for err == nil {
 		m, err = p.top()
 		n.Child = append(n.Child, m.Child...)
 	}
-	if err == os.EOF {
+	if err == io.EOF {
 		err = nil
 	}
 	return n, err
@@ -91,7 +92,7 @@ type parser struct {
 	*bufio.Reader
 }
 
-func (p *parser) top() (Node, os.Error) {
+func (p *parser) top() (Node, error) {
 	// Create a new Group node
 	n := Node{}
 
@@ -103,13 +104,13 @@ func (p *parser) top() (Node, os.Error) {
 
 		var next Node
 		switch c {
-			case '\n', '\t', ' ':
-				continue // slurp whitespace
-			case '<':
-				next, err = p.readPreview()
-			default:
-				p.UnreadByte()
-				next, err = p.readParagraph(false)
+		case '\n', '\t', ' ':
+			continue // slurp whitespace
+		case '<':
+			next, err = p.readPreview()
+		default:
+			p.UnreadByte()
+			next, err = p.readParagraph(false)
 		}
 
 		n.Child = append(n.Child, next)
@@ -126,7 +127,7 @@ func (p *parser) top() (Node, os.Error) {
 //   full text goes here
 //   >
 // The first < must have already been read.
-func (p *parser) readPreview() (Node, os.Error) {
+func (p *parser) readPreview() (Node, error) {
 	n := Node{Type: Preview}
 
 preview:
@@ -153,15 +154,15 @@ more:
 
 		var next Node
 		switch c {
-			case '>':
-				break more
-			case '\n', '\t', ' ':
-				continue // slurp whitespace
-			case '<':
-				next, err = p.readPreview() // sub preview
-			default:
-				p.UnreadByte()
-				next, err = p.readParagraph(true)
+		case '>':
+			break more
+		case '\n', '\t', ' ':
+			continue // slurp whitespace
+		case '<':
+			next, err = p.readPreview() // sub preview
+		default:
+			p.UnreadByte()
+			next, err = p.readParagraph(true)
 		}
 
 		n.Child = append(n.Child, next)
@@ -173,7 +174,7 @@ more:
 	return n, nil
 }
 
-func (p *parser) readParagraph(preview bool) (Node, os.Error) {
+func (p *parser) readParagraph(preview bool) (Node, error) {
 	n := Node{Type: Paragraph}
 
 	// Check for dashes
@@ -256,7 +257,7 @@ func (p *parser) readParagraph(preview bool) (Node, os.Error) {
 //   - Formatted if it starts with / * or _
 //   - As a dash if it starts with -
 //   - Up to the next dash, space, or newline otherwise
-func (p *parser) readText() (Node, os.Error) {
+func (p *parser) readText() (Node, error) {
 	n := Node{Type: Text}
 
 	// The first character determines what kind of text this is
@@ -266,14 +267,14 @@ func (p *parser) readText() (Node, os.Error) {
 	}
 
 	switch start {
-		case '-':
-			return p.readDash()
-		case '/', '*', '_':
-			p.UnreadByte()
-			return p.readFormatted()
-		default:
-			p.UnreadByte()
-			start = 0
+	case '-':
+		return p.readDash()
+	case '/', '*', '_':
+		p.UnreadByte()
+		return p.readFormatted()
+	default:
+		p.UnreadByte()
+		start = 0
 	}
 
 	for {
@@ -294,7 +295,7 @@ func (p *parser) readText() (Node, os.Error) {
 	return n, nil
 }
 
-func (p *parser) readFormatted() (Node, os.Error) {
+func (p *parser) readFormatted() (Node, error) {
 	n := Node{Type: Text}
 
 	start, err := p.ReadByte()
@@ -303,13 +304,16 @@ func (p *parser) readFormatted() (Node, os.Error) {
 	}
 
 	switch start {
-		case '*': n.Type = Bold
-		case '/': n.Type = Slant
-		case '_': n.Type = Underline
-		default:
-			// Shouldn't happen, but...
-			start = 0
-			p.UnreadByte()
+	case '*':
+		n.Type = Bold
+	case '/':
+		n.Type = Slant
+	case '_':
+		n.Type = Underline
+	default:
+		// Shouldn't happen, but...
+		start = 0
+		p.UnreadByte()
 	}
 
 	for {
@@ -322,7 +326,7 @@ func (p *parser) readFormatted() (Node, os.Error) {
 			if len(pair) == 1 {
 				break
 			}
-			if r := int(pair[1]); unicode.IsSpace(r) || unicode.IsPunct(r) {
+			if r := rune(pair[1]); unicode.IsSpace(r) || unicode.IsPunct(r) {
 				break
 			}
 		}
@@ -340,7 +344,7 @@ func (p *parser) readFormatted() (Node, os.Error) {
 	return n, nil
 }
 
-func (p *parser) readDash() (Node, os.Error) {
+func (p *parser) readDash() (Node, error) {
 	cnt := 1
 
 	for {
@@ -358,15 +362,16 @@ func (p *parser) readDash() (Node, os.Error) {
 	}
 
 	switch cnt {
-		case 1:
-			return Node{Type: Text, Text: []byte{'-'}}, nil
-		case 2:
-			return Node{Type: NDash}, nil
-		case 3:
-			return Node{Type: MDash}, nil
+	case 1:
+		return Node{Type: Text, Text: []byte{'-'}}, nil
+	case 2:
+		return Node{Type: NDash}, nil
+	case 3:
+		return Node{Type: MDash}, nil
 	}
 	return Node{Type: HLine}, nil
 }
 
 type Unimplemented string
+
 func (e Unimplemented) String() string { return string(e) + " unimplemented" }

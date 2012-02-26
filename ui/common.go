@@ -2,10 +2,9 @@ package ui
 
 import (
 	"fmt"
-	"http"
-	"os"
+	"net/http"
 	"runtime/debug"
-	"template"
+	"text/template"
 
 	"appengine"
 )
@@ -13,23 +12,38 @@ import (
 // Templates
 
 var reloadTemplates = !appengine.IsDevAppServer()
-var templates = template.SetMust(template.ParseTemplateGlob("templates/*.html"))
+var templates = template.New("fictex")
+
+func load(w http.ResponseWriter, ctx appengine.Context) {
+	fmt.Printf("Loading...")
+	t, err := template.New("fictex").ParseGlob("templates/*.html")
+	if err != nil {
+		if ctx == nil {
+			panic(err)
+		}
+		ctx.Infof("error parsing templates: %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("loaded %#v\n", templates)
+	templates = t
+}
+
+func init() {
+	load(nil, nil)
+}
 
 // Infrastructure for the handlers
 
-type Wrapper func(appengine.Context, http.ResponseWriter, *http.Request) os.Error
+type Wrapper func(appengine.Context, http.ResponseWriter, *http.Request) error
 
 func (f Wrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
-	if (reloadTemplates) {
-		set, err := template.ParseTemplateGlob("templates/*.html")
-		if err != nil {
-			ctx.Infof("error parsing templates: %s", err)
-			http.Error(w, err.String(), http.StatusInternalServerError)
-		}
-		templates = set
+	if reloadTemplates {
+		load(w, ctx)
 	}
+	fmt.Printf("templates %#v\n", templates)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -44,7 +58,7 @@ func (f Wrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if coder, ok := err.(ErrorCoder); ok {
 			code = coder.ErrorCode()
 		}
-		http.Error(w, err.String(), code)
+		http.Error(w, err.Error(), code)
 	}
 }
 
@@ -55,9 +69,11 @@ type ErrorCoder interface {
 }
 
 type Unauthorized string
-func (e Unauthorized) String() string { return string(e) + ": unauthorized" }
+
+func (e Unauthorized) Error() string { return string(e) + ": unauthorized" }
 func (e Unauthorized) ErrorCode() int { return http.StatusUnauthorized }
 
 type NotFound string
-func (e NotFound) String() string { return string(e) + ": not found" }
+
+func (e NotFound) Error() string { return string(e) + ": not found" }
 func (e NotFound) ErrorCode() int { return http.StatusNotFound }

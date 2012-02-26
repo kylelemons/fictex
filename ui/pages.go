@@ -2,13 +2,12 @@ package ui
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html"
-	"http"
 	"io/ioutil"
+	"net/http"
 	"strings"
-	"json"
-	"os"
 
 	"appengine"
 	"fictex"
@@ -26,7 +25,7 @@ func init() {
 
 // Set up the pages
 
-func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {
+func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/xhtml+xml; charset=UTF-8")
 
 	var id string
@@ -38,12 +37,12 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		return NotFound(r.URL.Path)
 	}
 
-	type metadata struct{
-		Id string
+	type metadata struct {
+		Id    string
 		Label string
 		Value string
 	}
-	type maindata struct{
+	type maindata struct {
 		// Story
 		Id    string
 		Title string
@@ -53,7 +52,7 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		Stories string
 
 		// Preview
-		Source      string
+		Source        string
 		PreviewHTML   string
 		PreviewSource string
 	}
@@ -78,8 +77,8 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 			continue
 		}
 		data.Meta = append(data.Meta, metadata{
-			Id: html.EscapeString(name),
-			Label: html.EscapeString(strings.ToUpper(prop.Name[:1])+prop.Name[1:]),
+			Id:    html.EscapeString(name),
+			Label: html.EscapeString(strings.ToUpper(prop.Name[:1]) + prop.Name[1:]),
 			Value: html.EscapeString(prop.Value),
 		})
 	}
@@ -99,10 +98,10 @@ func Edit(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		data.Stories = string(js)
 	}
 
-	return templates.Execute(w, "edit.html", data)
+	return templates.ExecuteTemplate(w, "edit.html", data)
 }
 
-func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {
+func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/xhtml+xml; charset=UTF-8")
 
 	var id string
@@ -112,11 +111,11 @@ func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		return NotFound(r.URL.Path)
 	}
 
-	type metadata struct{
+	type metadata struct {
 		Label string
 		Value string
 	}
-	type renderdata struct{
+	type renderdata struct {
 		Title string
 		Meta  []metadata
 		HTML  string
@@ -137,7 +136,7 @@ func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 			continue
 		}
 		data.Meta = append(data.Meta, metadata{
-			Label: html.EscapeString(strings.ToUpper(prop.Name[:1])+prop.Name[1:]),
+			Label: html.EscapeString(strings.ToUpper(prop.Name[:1]) + prop.Name[1:]),
 			Value: html.EscapeString(prop.Value),
 		})
 	}
@@ -151,10 +150,10 @@ func Read(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 		data.HTML = html.EscapeString(fmt.Sprintf("Error: %s", err))
 	}
 
-	return templates.Execute(w, "render.html", data)
+	return templates.ExecuteTemplate(w, "render.html", data)
 }
 
-func Ajax(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error {
+func Ajax(c appengine.Context, w http.ResponseWriter, r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
 	}
@@ -180,7 +179,7 @@ func Ajax(c appengine.Context, w http.ResponseWriter, r *http.Request) os.Error 
 	return nil
 }
 
-func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Error) {
+func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e error) {
 	out := map[string]string{}
 	in := map[string]interface{}{}
 
@@ -224,9 +223,9 @@ func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Err
 				}
 				// TODO(kevlar): Use memcache to figure out if a story's name changes
 				/*
-				if s.Title != "" && s.Title != title {
-					refreshStories = true
-				}
+					if s.Title != "" && s.Title != title {
+						refreshStories = true
+					}
 				*/
 				s.Title = title
 			default:
@@ -266,8 +265,8 @@ func Save(c appengine.Context, w http.ResponseWriter, r *http.Request) (e os.Err
 var LiveJournalRenderer = fictex.Renderer{
 	Escape: fictex.HTMLRenderer.Escape,
 
-	Bold: fictex.HTMLRenderer.Bold,
-	Slant: fictex.HTMLRenderer.Slant,
+	Bold:      fictex.HTMLRenderer.Bold,
+	Slant:     fictex.HTMLRenderer.Slant,
 	Underline: fictex.HTMLRenderer.Underline,
 	Paragraph: fictex.HTMLRenderer.Paragraph,
 
@@ -279,8 +278,8 @@ var LiveJournalRenderer = fictex.Renderer{
 }
 
 var Renderers = map[string]fictex.Renderer{
-	"html": fictex.HTMLRenderer,
-	"lj": LiveJournalRenderer,
-	"text": fictex.TextRenderer,
+	"html":   fictex.HTMLRenderer,
+	"lj":     LiveJournalRenderer,
+	"text":   fictex.TextRenderer,
 	"bbcode": fictex.TextRenderer,
 }
